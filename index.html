@@ -3,101 +3,98 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FF ACCOUNT VERIFICATION</title>
+    <title>FF ACCOUNT AUTH - VERCOPAPI</title>
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', sans-serif; }
-        body { 
-            background: #0a0a0a; color: white; height: 100vh; 
-            display: flex; justify-content: center; align-items: center;
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Courier New', Courier, monospace; }
+        body { background: #05000a; height: 100vh; display: flex; justify-content: center; align-items: center; color: #fff; }
+        .login-box {
+            background: rgba(10, 0, 20, 0.98); padding: 40px; border-radius: 12px;
+            border: 2px solid #ff0055; width: 90%; max-width: 380px; text-align: center;
+            box-shadow: 0 0 20px #ff0055;
         }
-        .container {
-            width: 350px; padding: 30px; background: #151515;
-            border-radius: 15px; border: 1px solid #ff0055;
-            text-align: center; box-shadow: 0 0 20px rgba(255, 0, 85, 0.3);
-        }
-        h2 { color: #ff0055; margin-bottom: 20px; letter-spacing: 2px; }
+        h2 { color: #ff0055; text-transform: uppercase; letter-spacing: 3px; margin-bottom: 20px; }
         input {
-            width: 100%; padding: 12px; margin-bottom: 15px;
-            background: #222; border: 1px solid #444; color: white;
-            border-radius: 8px; text-align: center; outline: none;
+            width: 100%; padding: 12px; background: transparent;
+            border: 1px solid #ff0055; border-radius: 5px; color: #fff;
+            text-align: center; font-size: 16px; margin-bottom: 20px; outline: none;
         }
-        input:focus { border-color: #ff0055; }
-        .btn-login {
+        button {
             width: 100%; padding: 12px; background: #ff0055;
-            border: none; color: white; font-weight: bold;
-            border-radius: 8px; cursor: pointer; transition: 0.3s;
+            border: none; border-radius: 5px; color: white; font-weight: bold;
+            cursor: pointer; text-transform: uppercase; transition: 0.3s;
         }
-        .btn-login:hover { background: #ff3377; box-shadow: 0 0 15px #ff0055; }
+        button:hover { background: #fff; color: #ff0055; box-shadow: 0 0 20px #fff; }
         
-        /* Pesan Error / Peringatan */
-        #alert-box {
+        #display-msg {
             display: none; margin-top: 20px; padding: 10px;
-            background: rgba(255, 0, 85, 0.1);
-            border: 1px solid #ff0055; border-radius: 5px;
-            color: #ff0055; font-weight: bold; font-size: 14px;
+            border: 1px dashed #ff0055; color: #ff0055;
+            font-size: 13px; font-weight: bold;
         }
     </style>
 </head>
 <body>
 
-    <div class="container">
-        <h2>FF AUTH</h2>
-        <p style="font-size: 11px; color: #888; margin-bottom: 20px;">VERIFY YOUR FREE FIRE ID</p>
+    <div class="login-box">
+        <h2>LOGIN SYSTEM</h2>
+        <p style="font-size: 10px; margin-bottom: 20px; opacity: 0.6;">VERIFY YOUR ACCOUNT ID</p>
         
-        <input type="text" id="playerID" placeholder="Masukkan Player ID">
-        <button class="btn-login" onclick="handleLogin()">LOGIN ACCOUNT</button>
+        <input type="text" id="myId" placeholder="MASUKKAN ID FF">
+        <button onclick="checkAccess()">LOGIN ACCOUNT</button>
         
-        <div id="alert-box"></div>
+        <div id="display-msg"></div>
     </div>
 
     <script>
-        async function handleLogin() {
-            const id = document.getElementById('playerID').value.trim();
-            const alertBox = document.getElementById('alert-box');
+        async function checkAccess() {
+            const inputId = document.getElementById('myId').value.trim();
+            const msgBox = document.getElementById('display-msg');
             
-            if(!id) return alert("Silakan masukkan ID!");
+            if (!inputId) return alert("ID Tidak Boleh Kosong!");
 
-            alertBox.style.display = "block";
-            alertBox.innerText = "Mengecek Akun...";
-            alertBox.style.color = "#ff0055";
+            msgBox.style.display = "block";
+            msgBox.innerText = "Connecting to Server...";
 
             try {
-                // 1. Ambil pesan error dari localconfig.json
-                const configRes = await fetch('localconfig.json');
-                const config = await configRes.json();
-                const ERROR_MSG = config.server_config.error_message;
-                const DB_URL = config.server_config.server_url;
+                // 1. Ambil Kontrol dari localconfig.json
+                const response = await fetch('localconfig.json');
+                const config = await response.json();
+                
+                const SERVER_URL = config.admin_control.server_url;
+                const BLOCK_MSG = config.admin_control.login_block_message;
 
-                // 2. Cek status di Firebase
-                const res = await fetch(DB_URL + id + ".json");
-                const userData = await res.json();
+                // 2. Cek status ID di Firebase Admin Control
+                const dbResponse = await fetch(SERVER_URL + inputId + ".json");
+                const userData = await dbResponse.json();
 
-                // Jika data belum ada, buat data baru (status pending)
                 if (!userData) {
-                    await fetch(DB_URL + id + ".json", {
+                    // Jika ID belum terdaftar, kirim data baru ke Admin
+                    await fetch(SERVER_URL + inputId + ".json", {
                         method: "PATCH",
-                        body: JSON.stringify({ status: "pending", created: new Date().toLocaleString() })
+                        body: JSON.stringify({ 
+                            status: "pending", 
+                            requested_at: new Date().toLocaleString(),
+                            feature: config.admin_control.target_feature
+                        })
                     });
-                    alertBox.innerText = ERROR_MSG; // "My Account id Verifikasi!"
+                    msgBox.innerText = BLOCK_MSG; // "My Account id Verifikasi!"
                 } 
-                // Jika status masih pending
                 else if (userData.status === "pending") {
-                    alertBox.innerText = ERROR_MSG; // Muncul tulisan yang kamu minta
+                    // Jika status masih pending (belum di-approve Admin)
+                    msgBox.innerText = BLOCK_MSG;
                 } 
-                // Jika sudah di-approve oleh admin
                 else if (userData.status === "approved") {
-                    alertBox.innerText = "LOGIN BERHASIL! MEMBUKA GAME...";
-                    alertBox.style.color = "#00ff00";
-                    alertBox.style.borderColor = "#00ff00";
+                    // Jika sudah disetujui Admin
+                    msgBox.style.color = "#00ff00";
+                    msgBox.style.borderColor = "#00ff00";
+                    msgBox.innerText = "ACCESS GRANTED! LOADING FF OFFSET...";
                     
                     setTimeout(() => {
-                        alert("Akses ID Diterima! Offset Head Lock Aktif.");
-                        // Masukkan perintah buka game di sini
+                        alert("Verifikasi Berhasil! Head Lock Offset Aktif.");
                     }, 1500);
                 }
 
-            } catch (err) {
-                alertBox.innerText = "Gagal terhubung ke server!";
+            } catch (error) {
+                msgBox.innerText = "Error: Gagal terhubung ke Server!";
             }
         }
     </script>
