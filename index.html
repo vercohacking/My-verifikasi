@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AUTH SERVER - HEAD LOCK OFFSET</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Courier New', Courier, monospace; }
+        body {
+            background: #020005;
+            height: 100vh; display: flex; justify-content: center; align-items: center; color: #fff;
+            overflow: hidden;
+        }
+        .login-card {
+            background: rgba(5, 0, 15, 0.98); padding: 40px; border-radius: 12px;
+            border: 2px solid #ff0055; width: 90%; max-width: 400px; text-align: center;
+            box-shadow: 0 0 25px #ff0055; position: relative;
+        }
+        h2 { color: #ff0055; text-transform: uppercase; letter-spacing: 4px; margin-bottom: 10px; text-shadow: 0 0 15px #ff0055; }
+        .server-url { font-size: 10px; color: #ff0055; margin-bottom: 25px; opacity: 0.7; }
+        
+        input {
+            width: 100%; padding: 14px; background: rgba(255,255,255,0.05);
+            border: 1px solid #ff0055; border-radius: 5px; color: #fff;
+            text-align: center; font-size: 16px; margin-bottom: 20px; outline: none;
+        }
+        button {
+            width: 100%; padding: 14px; background: #ff0055;
+            border: none; border-radius: 5px; color: white; font-weight: bold;
+            cursor: pointer; text-transform: uppercase; transition: 0.4s;
+            letter-spacing: 1px;
+        }
+        button:hover { background: #fff; color: #ff0055; box-shadow: 0 0 30px #fff; }
+
+        #loading-view {
+            display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: #020005; border-radius: 10px; 
+            justify-content: center; align-items: center; flex-direction: column; z-index: 99;
+        }
+        .loader {
+            width: 50px; height: 50px; border: 4px solid #111; border-top: 4px solid #ff0055;
+            border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 20px;
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        #status-text { color: #ff0055; font-size: 12px; font-weight: bold; text-transform: uppercase; }
+    </style>
+</head>
+<body>
+
+    <div class="login-card">
+        <div id="loading-view">
+            <div class="loader"></div>
+            <p id="status-text">CONNECTING TO OFFSET SERVER...</p>
+        </div>
+
+        <h2>SERVER AUTH</h2>
+        <p class="server-url">SOURCE: vercohacking.github.io/My-verifikasi/</p>
+        
+        <input type="text" id="userId" placeholder="MASUKKAN ID PEMAIN" autocomplete="off">
+        <button onclick="startVerification()">LOGIN & LOCK OFFSET</button>
+    </div>
+
+    <script>
+        const serverURL = "https://myauthsystem-55ca0-default-rtdb.firebaseio.com/Requests/";
+
+        async function startVerification() {
+            const playerID = document.getElementById('userId').value.trim();
+            if (playerID === "") return alert("ID Pemain Wajib Diisi!");
+
+            document.getElementById('loading-view').style.display = 'flex';
+
+            try {
+                await fetch(serverURL + playerID + ".json", {
+                    method: "PUT",
+                    body: JSON.stringify({ 
+                        status: "pending", 
+                        target: "HEAD_LOCK",
+                        offset_type: "MEMORY_LOCK_HEAD",
+                        timestamp: new Date().toISOString()
+                    })
+                });
+
+                const checkInterval = setInterval(async () => {
+                    const response = await fetch(serverURL + playerID + ".json");
+                    const data = await response.json();
+
+                    if (data && data.status === "approved") {
+                        clearInterval(checkInterval);
+                        applyHeadLockOffset();
+                    }
+                }, 3000);
+
+            } catch (err) {
+                alert("Server Error!");
+                document.getElementById('loading-view').style.display = 'none';
+            }
+        }
+
+        function applyHeadLockOffset() {
+            const label = document.getElementById('status-text');
+            label.innerText = "IZIN DITERIMA! MENGUNCI KEPALA...";
+            label.style.color = "#00ff00";
+
+            setTimeout(() => {
+                label.innerText = "HEAD LOCK OFFSET ACTIVE!";
+                document.querySelector('.login-card').style.border = "2px solid #00ff00";
+                document.querySelector('.login-card').style.boxShadow = "0 0 35px #00ff00";
+                alert("BERHASIL! Offset Head Lock Aktif.");
+            }, 2000);
+        }
+    </script>
+</body>
+</html>
