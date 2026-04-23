@@ -2,67 +2,77 @@
 <html lang="id">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AUTH SERVER - OFFSET LOCK</title>
+    <title>FF LOGIN SYSTEM - OFFSET AUTH</title>
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Courier New', Courier, monospace; }
-        body { background: #05000a; height: 100vh; display: flex; justify-content: center; align-items: center; color: #fff; overflow: hidden; }
-        .card { background: rgba(10, 0, 20, 0.95); padding: 40px; border-radius: 10px; border: 1px solid #bc13fe; width: 90%; max-width: 400px; text-align: center; box-shadow: 0 0 20px #bc13fe; }
-        h2 { color: #bc13fe; text-transform: uppercase; letter-spacing: 3px; margin-bottom: 25px; }
-        input { width: 100%; padding: 12px; background: transparent; border: 1px solid #bc13fe; border-radius: 5px; color: #fff; text-align: center; margin-bottom: 20px; outline: none; }
-        button { width: 100%; padding: 12px; background: #bc13fe; border: none; border-radius: 5px; color: white; font-weight: bold; cursor: pointer; text-transform: uppercase; }
-        #status { margin-top: 20px; font-size: 12px; color: #bc13fe; font-weight: bold; }
+        body { background: #05000a; color: #fff; font-family: monospace; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+        .card { border: 2px solid #ff0055; padding: 40px; text-align: center; box-shadow: 0 0 25px #ff0055; border-radius: 15px; width: 350px; }
+        h2 { color: #ff0055; text-transform: uppercase; letter-spacing: 2px; }
+        input { width: 100%; padding: 12px; margin-top: 20px; background: rgba(255,255,255,0.05); border: 1px solid #ff0055; color: white; text-align: center; outline: none; }
+        button { width: 100%; padding: 12px; margin-top: 15px; background: #ff0055; border: none; color: white; cursor: pointer; font-weight: bold; text-transform: uppercase; }
+        #status { margin-top: 20px; font-size: 11px; font-weight: bold; color: #ff0055; }
     </style>
 </head>
 <body>
 
     <div class="card">
-        <h2>OFFSET SERVER</h2>
-        <input type="text" id="userId" placeholder="MASUKKAN ID" autocomplete="off">
-        <button onclick="startAuth()">VERIFIKASI ID</button>
-        <p id="status">STATUS: STANDBY</p>
+        <h2>FF LOGIN AUTH</h2>
+        <p style="font-size: 9px; opacity: 0.6;">SYNCED WITH LOCALCONFIG.JSON</p>
+        <input type="text" id="userID" placeholder="ENTER PLAYER ID">
+        <button onclick="startProcess()">LOGIN FREE FIRE</button>
+        <div id="status">SERVER READY</div>
     </div>
 
     <script>
-        // SATU SERVER URL
-        const serverURL = "https://myauthsystem-55ca0-default-rtdb.firebaseio.com/Requests/";
+        async function startProcess() {
+            const id = document.getElementById('userID').value.trim();
+            const log = document.getElementById('status');
+            if(!id) return alert("ID Needed!");
 
-        async function startAuth() {
-            const id = document.getElementById('userId').value.trim();
-            const statusText = document.getElementById('status');
-            if (id === "") return alert("ID Wajib Diisi!");
-
-            statusText.innerText = "STATUS: MENGHUBUNGKAN...";
+            log.innerText = "READING LOCALCONFIG...";
 
             try {
-                // MENGGUNAKAN PATCH (Lebih aman dari 405 error)
-                await fetch(serverURL + id + ".json", {
+                // 1. Ambil URL Server dari file JSON lokal di GitHub
+                const configRes = await fetch('localconfig.json');
+                const config = await configRes.json();
+                const SERVER_URL = config.auth_config.server_url;
+
+                log.innerText = "CONNECTING TO SERVER...";
+
+                // 2. Kirim Request ke Firebase (ServerURL)
+                await fetch(SERVER_URL + id + ".json", {
                     method: "PATCH",
                     body: JSON.stringify({ 
                         status: "pending", 
-                        offset: "HEAD_LOCK_0x7FF",
-                        server_source: "index_access"
+                        module: config.auth_config.system_mode,
+                        login_time: new Date().toISOString()
                     })
                 });
 
-                statusText.innerText = "STATUS: MENUNGGU PERSETUJUAN...";
+                log.innerText = "WAITING FOR ADMIN APPROVAL...";
 
-                // Cek status tiap 3 detik
-                const interval = setInterval(async () => {
-                    const check = await fetch(serverURL + id + ".json");
-                    const data = await check.json();
+                // 3. Cek Izin Secara Real-time
+                const check = setInterval(async () => {
+                    const res = await fetch(SERVER_URL + id + ".json");
+                    const data = await res.json();
 
-                    if (data && data.status === "approved") {
-                        clearInterval(interval);
-                        statusText.innerText = "STATUS: OFFSET ACTIVE!";
-                        statusText.style.color = "#00ff00";
-                        alert("VERIFIKASI SUKSES! Offset Head Lock Aktif.");
+                    if(data && data.status === "approved") {
+                        clearInterval(check);
+                        
+                        log.innerText = "ACCESS GRANTED! REDIRECTING TO GAME...";
+                        log.style.color = "#00ff00";
+                        document.querySelector('.card').style.borderColor = "#00ff00";
+                        document.querySelector('.card').style.boxShadow = "0 0 35px #00ff00";
+
+                        setTimeout(() => {
+                            alert("BERHASIL! Offset Head Lock Aktif. Membuka akses Login Free Fire...");
+                            // Di sini sistem bisa diarahkan untuk membuka protokol game atau token
+                        }, 1500);
                     }
                 }, 3000);
 
             } catch (e) {
-                statusText.innerText = "STATUS: SERVER ERROR!";
-                alert("Masalah Jaringan/Server!");
+                log.innerText = "ERROR: FAILED TO SYNC SERVERURL!";
+                console.error(e);
             }
         }
     </script>
