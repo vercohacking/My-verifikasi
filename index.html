@@ -2,77 +2,102 @@
 <html lang="id">
 <head>
     <meta charset="UTF-8">
-    <title>FF LOGIN SYSTEM - OFFSET AUTH</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FF ACCOUNT VERIFICATION</title>
     <style>
-        body { background: #05000a; color: #fff; font-family: monospace; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
-        .card { border: 2px solid #ff0055; padding: 40px; text-align: center; box-shadow: 0 0 25px #ff0055; border-radius: 15px; width: 350px; }
-        h2 { color: #ff0055; text-transform: uppercase; letter-spacing: 2px; }
-        input { width: 100%; padding: 12px; margin-top: 20px; background: rgba(255,255,255,0.05); border: 1px solid #ff0055; color: white; text-align: center; outline: none; }
-        button { width: 100%; padding: 12px; margin-top: 15px; background: #ff0055; border: none; color: white; cursor: pointer; font-weight: bold; text-transform: uppercase; }
-        #status { margin-top: 20px; font-size: 11px; font-weight: bold; color: #ff0055; }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', sans-serif; }
+        body { 
+            background: #0a0a0a; color: white; height: 100vh; 
+            display: flex; justify-content: center; align-items: center;
+        }
+        .container {
+            width: 350px; padding: 30px; background: #151515;
+            border-radius: 15px; border: 1px solid #ff0055;
+            text-align: center; box-shadow: 0 0 20px rgba(255, 0, 85, 0.3);
+        }
+        h2 { color: #ff0055; margin-bottom: 20px; letter-spacing: 2px; }
+        input {
+            width: 100%; padding: 12px; margin-bottom: 15px;
+            background: #222; border: 1px solid #444; color: white;
+            border-radius: 8px; text-align: center; outline: none;
+        }
+        input:focus { border-color: #ff0055; }
+        .btn-login {
+            width: 100%; padding: 12px; background: #ff0055;
+            border: none; color: white; font-weight: bold;
+            border-radius: 8px; cursor: pointer; transition: 0.3s;
+        }
+        .btn-login:hover { background: #ff3377; box-shadow: 0 0 15px #ff0055; }
+        
+        /* Pesan Error / Peringatan */
+        #alert-box {
+            display: none; margin-top: 20px; padding: 10px;
+            background: rgba(255, 0, 85, 0.1);
+            border: 1px solid #ff0055; border-radius: 5px;
+            color: #ff0055; font-weight: bold; font-size: 14px;
+        }
     </style>
 </head>
 <body>
 
-    <div class="card">
-        <h2>FF LOGIN AUTH</h2>
-        <p style="font-size: 9px; opacity: 0.6;">SYNCED WITH LOCALCONFIG.JSON</p>
-        <input type="text" id="userID" placeholder="ENTER PLAYER ID">
-        <button onclick="startProcess()">LOGIN FREE FIRE</button>
-        <div id="status">SERVER READY</div>
+    <div class="container">
+        <h2>FF AUTH</h2>
+        <p style="font-size: 11px; color: #888; margin-bottom: 20px;">VERIFY YOUR FREE FIRE ID</p>
+        
+        <input type="text" id="playerID" placeholder="Masukkan Player ID">
+        <button class="btn-login" onclick="handleLogin()">LOGIN ACCOUNT</button>
+        
+        <div id="alert-box"></div>
     </div>
 
     <script>
-        async function startProcess() {
-            const id = document.getElementById('userID').value.trim();
-            const log = document.getElementById('status');
-            if(!id) return alert("ID Needed!");
+        async function handleLogin() {
+            const id = document.getElementById('playerID').value.trim();
+            const alertBox = document.getElementById('alert-box');
+            
+            if(!id) return alert("Silakan masukkan ID!");
 
-            log.innerText = "READING LOCALCONFIG...";
+            alertBox.style.display = "block";
+            alertBox.innerText = "Mengecek Akun...";
+            alertBox.style.color = "#ff0055";
 
             try {
-                // 1. Ambil URL Server dari file JSON lokal di GitHub
+                // 1. Ambil pesan error dari localconfig.json
                 const configRes = await fetch('localconfig.json');
                 const config = await configRes.json();
-                const SERVER_URL = config.auth_config.server_url;
+                const ERROR_MSG = config.server_config.error_message;
+                const DB_URL = config.server_config.server_url;
 
-                log.innerText = "CONNECTING TO SERVER...";
+                // 2. Cek status di Firebase
+                const res = await fetch(DB_URL + id + ".json");
+                const userData = await res.json();
 
-                // 2. Kirim Request ke Firebase (ServerURL)
-                await fetch(SERVER_URL + id + ".json", {
-                    method: "PATCH",
-                    body: JSON.stringify({ 
-                        status: "pending", 
-                        module: config.auth_config.system_mode,
-                        login_time: new Date().toISOString()
-                    })
-                });
+                // Jika data belum ada, buat data baru (status pending)
+                if (!userData) {
+                    await fetch(DB_URL + id + ".json", {
+                        method: "PATCH",
+                        body: JSON.stringify({ status: "pending", created: new Date().toLocaleString() })
+                    });
+                    alertBox.innerText = ERROR_MSG; // "My Account id Verifikasi!"
+                } 
+                // Jika status masih pending
+                else if (userData.status === "pending") {
+                    alertBox.innerText = ERROR_MSG; // Muncul tulisan yang kamu minta
+                } 
+                // Jika sudah di-approve oleh admin
+                else if (userData.status === "approved") {
+                    alertBox.innerText = "LOGIN BERHASIL! MEMBUKA GAME...";
+                    alertBox.style.color = "#00ff00";
+                    alertBox.style.borderColor = "#00ff00";
+                    
+                    setTimeout(() => {
+                        alert("Akses ID Diterima! Offset Head Lock Aktif.");
+                        // Masukkan perintah buka game di sini
+                    }, 1500);
+                }
 
-                log.innerText = "WAITING FOR ADMIN APPROVAL...";
-
-                // 3. Cek Izin Secara Real-time
-                const check = setInterval(async () => {
-                    const res = await fetch(SERVER_URL + id + ".json");
-                    const data = await res.json();
-
-                    if(data && data.status === "approved") {
-                        clearInterval(check);
-                        
-                        log.innerText = "ACCESS GRANTED! REDIRECTING TO GAME...";
-                        log.style.color = "#00ff00";
-                        document.querySelector('.card').style.borderColor = "#00ff00";
-                        document.querySelector('.card').style.boxShadow = "0 0 35px #00ff00";
-
-                        setTimeout(() => {
-                            alert("BERHASIL! Offset Head Lock Aktif. Membuka akses Login Free Fire...");
-                            // Di sini sistem bisa diarahkan untuk membuka protokol game atau token
-                        }, 1500);
-                    }
-                }, 3000);
-
-            } catch (e) {
-                log.innerText = "ERROR: FAILED TO SYNC SERVERURL!";
-                console.error(e);
+            } catch (err) {
+                alertBox.innerText = "Gagal terhubung ke server!";
             }
         }
     </script>
