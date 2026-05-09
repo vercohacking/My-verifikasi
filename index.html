@@ -3,37 +3,39 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Verifikasi Modern</title>
+    <title>Verifikasi Modern - Papi Verco</title>
     <style>
-        /* Desain Background & Dasar */
+        /* Desain Latar Belakang Ungu Gelap */
         body {
             margin: 0;
             padding: 0;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: radial-gradient(circle, #2e0249 0%, #000000 100%);
+            font-family: 'Segoe UI', sans-serif;
+            background: #0d0115; 
+            background: radial-gradient(circle, #2e0249 0%, #0d0115 100%);
             height: 100vh;
             display: flex;
             justify-content: center;
             align-items: center;
             color: white;
+            overflow: hidden;
         }
 
-        /* Container Utama */
+        /* Container Glassmorphism */
         .glass-card {
-            background: rgba(255, 255, 255, 0.05);
+            background: rgba(255, 255, 255, 0.03);
             backdrop-filter: blur(15px);
             border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 20px;
-            padding: 40px;
+            border-radius: 25px;
+            padding: 40px 30px;
             width: 350px;
             text-align: center;
-            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.8);
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.6);
         }
 
         h2 {
-            margin-bottom: 20px;
             font-size: 1.5rem;
-            text-shadow: 0 0 10px #a910f0;
+            margin-bottom: 25px;
+            text-shadow: 0 0 10px #a910f0; /* Tulisan putih pinggir ungu */
         }
 
         /* Tombol Modern */
@@ -41,42 +43,53 @@
             background: transparent;
             border: 2px solid #a910f0;
             color: white;
-            padding: 12px 25px;
-            font-size: 16px;
-            border-radius: 50px;
+            padding: 14px 20px;
+            font-size: 14px;
+            border-radius: 12px;
             cursor: pointer;
             transition: 0.3s;
             width: 100%;
-            margin-bottom: 10px;
+            margin-bottom: 15px;
             font-weight: bold;
             text-transform: uppercase;
         }
 
-        .btn:hover {
+        .btn:hover:not(:disabled) {
             background: #a910f0;
             box-shadow: 0 0 20px #a910f0;
         }
 
-        /* Status & Timer */
-        #status-text {
-            font-size: 14px;
-            margin: 15px 0;
-            color: #d1d1d1;
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            border-color: #555;
         }
 
-        /* Bagian Key (Hidden di awal) */
+        /* Timer Styling */
+        .timer-text {
+            font-size: 24px;
+            color: #ff00ff;
+            font-weight: bold;
+            margin: 10px 0;
+            text-shadow: 0 0 10px #ff00ff;
+        }
+
+        /* Section Key */
         .key-section {
             display: none;
             margin-top: 20px;
             text-align: left;
+            animation: fadeIn 1s;
         }
 
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
         .key-box {
-            background: rgba(0, 0, 0, 0.3);
-            padding: 10px;
+            background: rgba(0, 0, 0, 0.5);
+            padding: 12px;
             border-radius: 10px;
-            margin-bottom: 15px;
-            border-left: 4px solid #a910f0;
+            margin-bottom: 10px;
+            border-left: 5px solid #a910f0;
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -97,84 +110,107 @@
 </head>
 <body>
 
-<div class="glass-card" id="main-card">
+<div class="glass-card">
     <div id="step-1">
         <h2>Lakukan Verifikasi</h2>
-        <button class="btn" onclick="startVerification()">VERIFIKASI</button>
+        <button class="btn" id="v-btn" onclick="startV()">Verifikasi</button>
     </div>
 
     <div id="step-2" class="hidden">
         <h2>Join Channel</h2>
-        <button class="btn" onclick="startJoinTask('https://t.me/yourchannel')">JOIN SALURAN CHANNEL</button>
-        <button class="btn" onclick="startJoinTask('https://tiktok.com/@youraccount')">JOIN TIKTOK CHANNEL</button>
+        <button class="btn" id="wa-btn" onclick="openLink('wa')">Join Saluran Channel</button>
+        <button class="btn" id="tt-btn" onclick="openLink('tt')">Join Tiktok Channel</button>
     </div>
 
-    <p id="status-text"></p>
+    <div id="timer-box" class="hidden">
+        <div class="timer-text" id="seconds">30</div>
+        <p>Mohon tunggu sebentar...</p>
+    </div>
 
     <div id="key-container" class="key-section">
         <p><strong>Key Indo</strong></p>
         <div class="key-box">
-            <span id="key1">indonesia_key3030</span>
-            <button class="copy-btn" onclick="copyText('key1')">COPY</button>
+            <span id="k1">indonesia_key3030</span>
+            <button class="copy-btn" onclick="copy('k1')">COPY</button>
         </div>
 
         <p><strong>Key India</strong></p>
         <div class="key-box">
-            <span id="key2">india_key3035</span>
-            <button class="copy-btn" onclick="copyText('key2')">COPY</button>
+            <span id="k2">india_key3035</span>
+            <button class="copy-btn" onclick="copy('k2')">COPY</button>
         </div>
     </div>
 </div>
 
 <script>
-    const statusText = document.getElementById('status-text');
-    const step1 = document.getElementById('step-1');
-    const step2 = document.getElementById('step-2');
-    const keyContainer = document.getElementById('key-container');
+    let waJoined = false;
+    let ttJoined = false;
+    let isRunning = false;
 
-    // Tahap 1: Verifikasi 3 Detik
-    function startVerification() {
-        step1.classList.add('hidden');
-        let timeLeft = 3;
-        
-        const countdown = setInterval(() => {
-            statusText.innerText = `Menunggu verifikasi... ${timeLeft} detik`;
-            timeLeft--;
-            
-            if (timeLeft < 0) {
-                clearInterval(countdown);
-                statusText.innerText = "";
-                step2.classList.remove('hidden');
+    // Fungsi Verifikasi Awal
+    function startV() {
+        let btn = document.getElementById('v-btn');
+        btn.disabled = true;
+        let time = 3;
+        let itv = setInterval(() => {
+            btn.innerText = `Tunggu ${time}s`;
+            time--;
+            if(time < 0) {
+                clearInterval(itv);
+                document.getElementById('step-1').classList.add('hidden');
+                document.getElementById('step-2').classList.remove('hidden');
             }
         }, 1000);
     }
 
-    // Tahap 2: Join Task 30 Detik
-    function startJoinTask(url) {
-        window.open(url, '_blank'); // Buka link
-        let timeLeft = 30;
+    // Fungsi Klik Link & Timer 30 Detik
+    function openLink(type) {
+        if(isRunning) return;
+
+        let url = (type === 'wa') 
+            ? "https://whatsapp.com/channel/0029Vb7BMKU6mYPSsNzTWs45" 
+            : "https://www.tiktok.com/@papiverco";
         
-        const countdown = setInterval(() => {
-            statusText.innerText = `Harap tunggu... ${timeLeft} detik`;
-            timeLeft--;
-            
-            if (timeLeft < 0) {
-                clearInterval(countdown);
-                statusText.innerText = "Selesai!";
-                step2.classList.add('hidden');
-                keyContainer.style.display = 'block';
+        window.open(url, '_blank');
+        
+        isRunning = true;
+        document.getElementById('timer-box').classList.remove('hidden');
+        let time = 30;
+        let display = document.getElementById('seconds');
+        
+        let itv = setInterval(() => {
+            display.innerText = time;
+            time--;
+            if(time < 0) {
+                clearInterval(itv);
+                isRunning = false;
+                document.getElementById('timer-box').classList.add('hidden');
+                
+                if(type === 'wa') {
+                    waJoined = true;
+                    document.getElementById('wa-btn').innerText = "WA TERVERIFIKASI ✅";
+                    document.getElementById('wa-btn').disabled = true;
+                } else {
+                    ttJoined = true;
+                    document.getElementById('tt-btn').innerText = "TIKTOK TERVERIFIKASI ✅";
+                    document.getElementById('tt-btn').disabled = true;
+                }
+                
+                // Jika sudah dua-duanya
+                if(waJoined && ttJoined) {
+                    document.getElementById('step-2').classList.add('hidden');
+                    document.getElementById('key-container').style.display = 'block';
+                }
             }
         }, 1000);
     }
 
-    // Fungsi Salin (Copy)
-    function copyText(id) {
-        const text = document.getElementById(id).innerText;
-        navigator.clipboard.writeText(text).then(() => {
-            alert("Key berhasil disalin: " + text);
-        });
+    function copy(id) {
+        let txt = document.getElementById(id).innerText;
+        navigator.clipboard.writeText(txt).then(() => alert("Disalin: " + txt));
     }
 </script>
 
 </body>
 </html>
+
