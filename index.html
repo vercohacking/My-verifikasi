@@ -3,100 +3,178 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FF ACCOUNT AUTH - VERCOPAPI</title>
+    <title>Verifikasi Modern</title>
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Courier New', Courier, monospace; }
-        body { background: #05000a; height: 100vh; display: flex; justify-content: center; align-items: center; color: #fff; }
-        .login-box {
-            background: rgba(10, 0, 20, 0.98); padding: 40px; border-radius: 12px;
-            border: 2px solid #ff0055; width: 90%; max-width: 380px; text-align: center;
-            box-shadow: 0 0 20px #ff0055;
+        /* Desain Background & Dasar */
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: radial-gradient(circle, #2e0249 0%, #000000 100%);
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: white;
         }
-        h2 { color: #ff0055; text-transform: uppercase; letter-spacing: 3px; margin-bottom: 20px; }
-        input {
-            width: 100%; padding: 12px; background: transparent;
-            border: 1px solid #ff0055; border-radius: 5px; color: #fff;
-            text-align: center; font-size: 16px; margin-bottom: 20px; outline: none;
+
+        /* Container Utama */
+        .glass-card {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(15px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            padding: 40px;
+            width: 350px;
+            text-align: center;
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.8);
         }
-        button {
-            width: 100%; padding: 12px; background: #ff0055;
-            border: none; border-radius: 5px; color: white; font-weight: bold;
-            cursor: pointer; text-transform: uppercase; transition: 0.3s;
+
+        h2 {
+            margin-bottom: 20px;
+            font-size: 1.5rem;
+            text-shadow: 0 0 10px #a910f0;
         }
-        button:hover { background: #fff; color: #ff0055; box-shadow: 0 0 20px #fff; }
-        
-        #display-msg {
-            display: none; margin-top: 20px; padding: 10px;
-            border: 1px dashed #ff0055; color: #ff0055;
-            font-size: 13px; font-weight: bold;
+
+        /* Tombol Modern */
+        .btn {
+            background: transparent;
+            border: 2px solid #a910f0;
+            color: white;
+            padding: 12px 25px;
+            font-size: 16px;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: 0.3s;
+            width: 100%;
+            margin-bottom: 10px;
+            font-weight: bold;
+            text-transform: uppercase;
         }
+
+        .btn:hover {
+            background: #a910f0;
+            box-shadow: 0 0 20px #a910f0;
+        }
+
+        /* Status & Timer */
+        #status-text {
+            font-size: 14px;
+            margin: 15px 0;
+            color: #d1d1d1;
+        }
+
+        /* Bagian Key (Hidden di awal) */
+        .key-section {
+            display: none;
+            margin-top: 20px;
+            text-align: left;
+        }
+
+        .key-box {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 10px;
+            border-radius: 10px;
+            margin-bottom: 15px;
+            border-left: 4px solid #a910f0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .copy-btn {
+            background: #a910f0;
+            border: none;
+            color: white;
+            padding: 5px 10px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+
+        .hidden { display: none; }
     </style>
 </head>
 <body>
 
-    <div class="login-box">
-        <h2>LOGIN SYSTEM</h2>
-        <p style="font-size: 10px; margin-bottom: 20px; opacity: 0.6;">VERIFY YOUR ACCOUNT ID</p>
-        
-        <input type="text" id="myId" placeholder="MASUKKAN ID FF">
-        <button onclick="checkAccess()">LOGIN ACCOUNT</button>
-        
-        <div id="display-msg"></div>
+<div class="glass-card" id="main-card">
+    <div id="step-1">
+        <h2>Lakukan Verifikasi</h2>
+        <button class="btn" onclick="startVerification()">VERIFIKASI</button>
     </div>
 
-    <script>
-        async function checkAccess() {
-            const inputId = document.getElementById('myId').value.trim();
-            const msgBox = document.getElementById('display-msg');
+    <div id="step-2" class="hidden">
+        <h2>Join Channel</h2>
+        <button class="btn" onclick="startJoinTask('https://t.me/yourchannel')">JOIN SALURAN CHANNEL</button>
+        <button class="btn" onclick="startJoinTask('https://tiktok.com/@youraccount')">JOIN TIKTOK CHANNEL</button>
+    </div>
+
+    <p id="status-text"></p>
+
+    <div id="key-container" class="key-section">
+        <p><strong>Key Indo</strong></p>
+        <div class="key-box">
+            <span id="key1">indonesia_key3030</span>
+            <button class="copy-btn" onclick="copyText('key1')">COPY</button>
+        </div>
+
+        <p><strong>Key India</strong></p>
+        <div class="key-box">
+            <span id="key2">india_key3035</span>
+            <button class="copy-btn" onclick="copyText('key2')">COPY</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    const statusText = document.getElementById('status-text');
+    const step1 = document.getElementById('step-1');
+    const step2 = document.getElementById('step-2');
+    const keyContainer = document.getElementById('key-container');
+
+    // Tahap 1: Verifikasi 3 Detik
+    function startVerification() {
+        step1.classList.add('hidden');
+        let timeLeft = 3;
+        
+        const countdown = setInterval(() => {
+            statusText.innerText = `Menunggu verifikasi... ${timeLeft} detik`;
+            timeLeft--;
             
-            if (!inputId) return alert("ID Tidak Boleh Kosong!");
-
-            msgBox.style.display = "block";
-            msgBox.innerText = "Connecting to Server...";
-
-            try {
-                // 1. Ambil Kontrol dari localconfig.json
-                const response = await fetch('localconfig.json');
-                const config = await response.json();
-                
-                const SERVER_URL = config.admin_control.server_url;
-                const BLOCK_MSG = config.admin_control.login_block_message;
-
-                // 2. Cek status ID di Firebase Admin Control
-                const dbResponse = await fetch(SERVER_URL + inputId + ".json");
-                const userData = await dbResponse.json();
-
-                if (!userData) {
-                    // Jika ID belum terdaftar, kirim data baru ke Admin
-                    await fetch(SERVER_URL + inputId + ".json", {
-                        method: "PATCH",
-                        body: JSON.stringify({ 
-                            status: "pending", 
-                            requested_at: new Date().toLocaleString(),
-                            feature: config.admin_control.target_feature
-                        })
-                    });
-                    msgBox.innerText = BLOCK_MSG; // "My Account id Verifikasi!"
-                } 
-                else if (userData.status === "pending") {
-                    // Jika status masih pending (belum di-approve Admin)
-                    msgBox.innerText = BLOCK_MSG;
-                } 
-                else if (userData.status === "approved") {
-                    // Jika sudah disetujui Admin
-                    msgBox.style.color = "#00ff00";
-                    msgBox.style.borderColor = "#00ff00";
-                    msgBox.innerText = "ACCESS GRANTED! LOADING FF OFFSET...";
-                    
-                    setTimeout(() => {
-                        alert("Verifikasi Berhasil! Head Lock Offset Aktif.");
-                    }, 1500);
-                }
-
-            } catch (error) {
-                msgBox.innerText = "Error: Gagal terhubung ke Server!";
+            if (timeLeft < 0) {
+                clearInterval(countdown);
+                statusText.innerText = "";
+                step2.classList.remove('hidden');
             }
-        }
-    </script>
+        }, 1000);
+    }
+
+    // Tahap 2: Join Task 30 Detik
+    function startJoinTask(url) {
+        window.open(url, '_blank'); // Buka link
+        let timeLeft = 30;
+        
+        const countdown = setInterval(() => {
+            statusText.innerText = `Harap tunggu... ${timeLeft} detik`;
+            timeLeft--;
+            
+            if (timeLeft < 0) {
+                clearInterval(countdown);
+                statusText.innerText = "Selesai!";
+                step2.classList.add('hidden');
+                keyContainer.style.display = 'block';
+            }
+        }, 1000);
+    }
+
+    // Fungsi Salin (Copy)
+    function copyText(id) {
+        const text = document.getElementById(id).innerText;
+        navigator.clipboard.writeText(text).then(() => {
+            alert("Key berhasil disalin: " + text);
+        });
+    }
+</script>
+
 </body>
 </html>
