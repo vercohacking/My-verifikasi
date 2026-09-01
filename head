@@ -1,0 +1,91 @@
+#include <iostream>
+#include <thread>
+#include <chrono>
+#include <vector>
+#include <mutex>
+#include <windows.h>
+
+using namespace std;
+
+// Auto Null Nyalakan
+#define AUTO_NULL_ACTIVE true
+
+// Fungsi Lock Player dengan Head
+class PlayerLocker {
+private:
+    mutex mtx;
+    bool isLocked = false;
+    string targetHead;
+
+public:
+    void lockOnHead(const string& playerID) {
+        lock_guard<mutex> lock(mtx);
+        targetHead = playerID;
+        isLocked = true;
+        cout << "[🔒] HEAD LOCKED ON: " << playerID << endl;
+        cout << "[💀] AUTO-NULL: " << (AUTO_NULL_ACTIVE ? "ACTIVE" : "OFF") << endl;
+    }
+
+    void releaseLock() {
+        lock_guard<mutex> lock(mtx);
+        isLocked = false;
+        targetHead.clear();
+        cout << "[🔓] LOCK RELEASED" << endl;
+    }
+
+    bool getLockStatus() {
+        lock_guard<mutex> lock(mtx);
+        return isLocked;
+    }
+
+    void nullProcess() {
+        while (AUTO_NULL_ACTIVE) {
+            if (isLocked) {
+                cout << "[⚠] NULLIFYING HEAD: " << targetHead << " ..." << endl;
+                // Simulasi null proses
+                this_thread::sleep_for(chrono::seconds(1));
+                cout << "[✓] HEAD NEUTRALIZED" << endl;
+            }
+            this_thread::sleep_for(chrono::milliseconds(500));
+        }
+    }
+};
+
+int main() {
+    SetConsoleTitle("VEXUS LOCKER v1.0");
+    system("color 0A");
+    
+    PlayerLocker locker;
+    thread nullThread(&PlayerLocker::nullProcess, &locker);
+
+    cout << "╔═══════════════════════════════════╗" << endl;
+    cout << "║   VEXUS HEAD LOCKER ACTIVATED     ║" << endl;
+    cout << "╚═══════════════════════════════════╝" << endl;
+    cout << "[+] AUTO-NULL: " << (AUTO_NULL_ACTIVE ? "ON" : "OFF") << endl;
+
+    string input;
+    while (true) {
+        cout << "\n>> ";
+        getline(cin, input);
+
+        if (input.find("/lock") == 0) {
+            string player = input.substr(6);
+            if (!player.empty()) {
+                locker.lockOnHead(player);
+            }
+        }
+        else if (input == "/unlock") {
+            locker.releaseLock();
+        }
+        else if (input == "/status") {
+            cout << "[STATUS] Locked: " << (locker.getLockStatus() ? "YES" : "NO") << endl;
+        }
+        else if (input == "/exit") {
+            locker.releaseLock();
+            break;
+        }
+    }
+
+    nullThread.detach();
+    return 0;
+}
